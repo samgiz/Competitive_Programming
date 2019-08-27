@@ -78,132 +78,19 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-	if ( !v.empty() ) {
-		std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-	}
-	return out;
+  if ( !v.empty() ) {
+    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+  }
+  return out;
 }
 
 const int N = 1e5+10;
 const ll M = 1e9+7;
 
-bool Lg[1000][1000];
-
-struct position{
-	vpii Changes;
-	int pos;
-	position(int &a){
-		pos = a;
-	}
-};
-
-vi Ans;
-int maxi = 0;
-
-bool recurse(int a, int n){
-	if(maxi < a){
-		cerr<<a<<endl;
-		maxi = a;
-	}
-	// cerr<<a<<endl;
-	if(a == n){
-		return true;
-	}
-	vector<position> Pos;
-	fori(n){
-		if(!Lg[a][i]){
-			Pos.pb(position(i));
-		}
-	}
-	random_shuffle(Pos.begin(), Pos.end());
-	int ct = 2;
-	if(Pos.size() == 0)return false;
-	for(auto &next: Pos){
-		// Downwards
-		forii(a+1, n){
-			if(!Lg[i][next.pos]){
-				next.Changes.pb({i, next.pos});
-			}
-		}
-		// top left to bottom right
-		int k = a+1, l = next.pos+1;
-		while(k < n && l < n){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l++;
-		}
-
-		// top right to bottom left
-		k = a+1, l = next.pos-1;
-		while(k < n && l >= 0){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l--;
-		}
-		// Other lines formed with other elements
-		fori(Ans.size()){
-			int b = i;
-			int prev = Ans[i]-1;
-			int down = a-b;
-			int right = next.pos-prev;
-			int g = __gcd(down, abs(right));
-			// cerr<<g<<endl;
-			down/=g;
-			right/=g;
-			int k = a+down, l = next.pos+right;
-			while(k < n && l < n && l >= 0){
-				if(!Lg[k][l]){
-					next.Changes.pb({k, l});
-				}
-				k+=down, l += right;
-			}
-		}
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 1;
-		}
-		Ans.pb(next.pos+1);
-		if(recurse(a+1, n)){
-			return true;
-		}
-		Ans.pop_back();
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 0;
-		}
-		// ct--;
-		// if(!ct)break;
-	}
-	// sort(Pos.begin(), Pos.end(), [](position a, position b){return a.Changes.size() < b.Changes.size();});
-	// fori(Pos.size())cerr<<Pos[i].Changes.size()<<" ";cerr<<endl;
-	// int ct = 2;
-	// for(auto &next: Pos){
-	// 	if(ct == 0)break;
-	// 	// ct--;
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 1;
-	// 	}
-	// 	Ans.pb(next.pos+1);
-	// 	if(recurse(a+1, n)){
-	// 		return true;
-	// 	}
-	// 	Ans.pop_back();
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 0;
-	// 	}
-	// }
-	return false;
-}
-
 int main(){
-	for(int i=999; i<1000; i+=2){
-		if(recurse(0, i))cout<<Ans<<endl;
-		else cout<<"Impossible for n: "<<i<<endl;
-		forj(i){
-			fork(i)Lg[j][k] = 0;
-		}
-		Ans.clear();
-	}
+	fastIO;
+	ll n, l, r;
+	cin>>n>>l>>r;
+	ll one = 1;
+	cout<<(n-l)*1 + (one << l)-1<<" "<<(n-r)*(one << (r-1)) + (one << r)-1;
 }

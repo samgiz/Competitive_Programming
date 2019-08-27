@@ -78,132 +78,103 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-	if ( !v.empty() ) {
-		std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-	}
-	return out;
+  if ( !v.empty() ) {
+    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+  }
+  return out;
 }
 
-const int N = 1e5+10;
+const int N = 2e5+10;
 const ll M = 1e9+7;
 
-bool Lg[1000][1000];
+// Initial array and final answer array
+ll P[N], Ans[N];
 
-struct position{
-	vpii Changes;
-	int pos;
-	position(int &a){
-		pos = a;
-	}
+// sum keeps the sum of leaves in [a, b)
+// l, r are children of node, which correspond to intervals [a, (a+b)/2) and [(a+b)/2, b)
+struct node{
+	ll a, b, sum;
+	node *l, *r;
 };
 
-vi Ans;
-int maxi = 0;
+// Root node for segment tree
+node* root = new node();
 
-bool recurse(int a, int n){
-	if(maxi < a){
-		cerr<<a<<endl;
-		maxi = a;
+// Initialize segment tree. The leaves of the tree have values 0 through n inclusive.
+void buildT(node*& cur, int a, int b){
+	// Set interval
+	cur->a = a;
+	cur->b = b;
+	if(a == b-1){
+		// Base case
+		cur->sum = a;
+		return;
 	}
-	// cerr<<a<<endl;
-	if(a == n){
-		return true;
-	}
-	vector<position> Pos;
-	fori(n){
-		if(!Lg[a][i]){
-			Pos.pb(position(i));
-		}
-	}
-	random_shuffle(Pos.begin(), Pos.end());
-	int ct = 2;
-	if(Pos.size() == 0)return false;
-	for(auto &next: Pos){
-		// Downwards
-		forii(a+1, n){
-			if(!Lg[i][next.pos]){
-				next.Changes.pb({i, next.pos});
-			}
-		}
-		// top left to bottom right
-		int k = a+1, l = next.pos+1;
-		while(k < n && l < n){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l++;
-		}
+	// Initialize empty chilren
+	cur->l = new node();
+	cur->r = new node();
+	// Populate children
+	buildT(cur->l, a, (a+b)/2);
+	buildT(cur->r, (a+b)/2, b);
+	// Calculate sum of interval [a, b)
+	cur->sum = cur->l->sum + cur->r->sum;
+}
 
-		// top right to bottom left
-		k = a+1, l = next.pos-1;
-		while(k < n && l >= 0){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l--;
-		}
-		// Other lines formed with other elements
-		fori(Ans.size()){
-			int b = i;
-			int prev = Ans[i]-1;
-			int down = a-b;
-			int right = next.pos-prev;
-			int g = __gcd(down, abs(right));
-			// cerr<<g<<endl;
-			down/=g;
-			right/=g;
-			int k = a+down, l = next.pos+right;
-			while(k < n && l < n && l >= 0){
-				if(!Lg[k][l]){
-					next.Changes.pb({k, l});
-				}
-				k+=down, l += right;
-			}
-		}
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 1;
-		}
-		Ans.pb(next.pos+1);
-		if(recurse(a+1, n)){
-			return true;
-		}
-		Ans.pop_back();
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 0;
-		}
-		// ct--;
-		// if(!ct)break;
+// Get index of element for which the sum of smaller remaining elements is target
+int getIndex(node*& cur, ll target){
+	// Search for the first element with higher sum than target. This will be the required element.
+	// Note: we can't search for the first element to match the sum and return an element that is one higher, since some elements might have a value of 0.
+	if(cur->a == cur->b - 1)return cur->a;
+	if(cur->l->sum <= target)return getIndex(cur->r, target-cur->l->sum);
+	return getIndex(cur->l, target);
+}
+
+// Update element at index to 0
+void updateT(node*& cur, int index){
+	if(cur->a == cur->b - 1){
+		// We arrived at the required index, remove element from further sum calculations
+		cur->sum=0;
+		return;
 	}
-	// sort(Pos.begin(), Pos.end(), [](position a, position b){return a.Changes.size() < b.Changes.size();});
-	// fori(Pos.size())cerr<<Pos[i].Changes.size()<<" ";cerr<<endl;
-	// int ct = 2;
-	// for(auto &next: Pos){
-	// 	if(ct == 0)break;
-	// 	// ct--;
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 1;
-	// 	}
-	// 	Ans.pb(next.pos+1);
-	// 	if(recurse(a+1, n)){
-	// 		return true;
-	// 	}
-	// 	Ans.pop_back();
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 0;
-	// 	}
-	// }
-	return false;
+
+	// Make sure to traverse the correct branch
+	if(cur->r->a <= index)updateT(cur->r, index);
+	else updateT(cur->l, index);
+
+	// Recalculate sum
+	cur->sum = cur->l->sum + cur->r->sum;
+}
+
+// Print all elements of the segment tree
+void printAll(node*& cur){
+	if(cur->a == cur->b - 1){
+		cerr<<cur->sum<<" ";
+		return;
+	}
+	printAll(cur->l);
+	printAll(cur->r);
 }
 
 int main(){
-	for(int i=999; i<1000; i+=2){
-		if(recurse(0, i))cout<<Ans<<endl;
-		else cout<<"Impossible for n: "<<i<<endl;
-		forj(i){
-			fork(i)Lg[j][k] = 0;
-		}
-		Ans.clear();
+	fastIO;
+
+	// Read data
+	int n;
+	cin>>n;
+	fori(n){
+		cin>>P[i];
 	}
+
+	// Initialize segment tree (P is not required for this step)
+	buildT(root, 0, n+1);
+
+	// Calculate the answer backwards so that we know which elements can be counted in the provided sum
+	fori_(n){
+		// Find which index is at position i
+		Ans[i] = getIndex(root, P[i]);
+		// Remove the element from further calculations
+		updateT(root, Ans[i]);
+	}
+	// Print answer
+	fori(n)cout<<Ans[i]<<" ";
 }

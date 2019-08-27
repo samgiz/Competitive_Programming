@@ -78,132 +78,94 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-	if ( !v.empty() ) {
-		std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-	}
-	return out;
+  if ( !v.empty() ) {
+    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+  }
+  return out;
 }
 
-const int N = 1e5+10;
+const int N = 1e3+10;
 const ll M = 1e9+7;
 
-bool Lg[1000][1000];
+int ct = 0, rem;
+vi Ans[N];
 
-struct position{
-	vpii Changes;
-	int pos;
-	position(int &a){
-		pos = a;
-	}
-};
+pair<double, double>Center, C[N];
+int Rem[N];
 
-vi Ans;
-int maxi = 0;
-
-bool recurse(int a, int n){
-	if(maxi < a){
-		cerr<<a<<endl;
-		maxi = a;
-	}
-	// cerr<<a<<endl;
-	if(a == n){
-		return true;
-	}
-	vector<position> Pos;
-	fori(n){
-		if(!Lg[a][i]){
-			Pos.pb(position(i));
-		}
-	}
-	random_shuffle(Pos.begin(), Pos.end());
-	int ct = 2;
-	if(Pos.size() == 0)return false;
-	for(auto &next: Pos){
-		// Downwards
-		forii(a+1, n){
-			if(!Lg[i][next.pos]){
-				next.Changes.pb({i, next.pos});
-			}
-		}
-		// top left to bottom right
-		int k = a+1, l = next.pos+1;
-		while(k < n && l < n){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l++;
-		}
-
-		// top right to bottom left
-		k = a+1, l = next.pos-1;
-		while(k < n && l >= 0){
-			if(!Lg[k][l]){
-				next.Changes.pb({k, l});
-			}
-			k++;
-			l--;
-		}
-		// Other lines formed with other elements
-		fori(Ans.size()){
-			int b = i;
-			int prev = Ans[i]-1;
-			int down = a-b;
-			int right = next.pos-prev;
-			int g = __gcd(down, abs(right));
-			// cerr<<g<<endl;
-			down/=g;
-			right/=g;
-			int k = a+down, l = next.pos+right;
-			while(k < n && l < n && l >= 0){
-				if(!Lg[k][l]){
-					next.Changes.pb({k, l});
-				}
-				k+=down, l += right;
-			}
-		}
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 1;
-		}
-		Ans.pb(next.pos+1);
-		if(recurse(a+1, n)){
-			return true;
-		}
-		Ans.pop_back();
-		for(auto &i: next.Changes){
-			Lg[i.fi][i.se] = 0;
-		}
-		// ct--;
-		// if(!ct)break;
-	}
-	// sort(Pos.begin(), Pos.end(), [](position a, position b){return a.Changes.size() < b.Changes.size();});
-	// fori(Pos.size())cerr<<Pos[i].Changes.size()<<" ";cerr<<endl;
-	// int ct = 2;
-	// for(auto &next: Pos){
-	// 	if(ct == 0)break;
-	// 	// ct--;
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 1;
-	// 	}
-	// 	Ans.pb(next.pos+1);
-	// 	if(recurse(a+1, n)){
-	// 		return true;
-	// 	}
-	// 	Ans.pop_back();
-	// 	for(auto &i: next.Changes){
-	// 		Lg[i.fi][i.se] = 0;
-	// 	}
-	// }
-	return false;
+double dist(pair<double, double>a, pair<double, double>b){
+	return (a.fi-b.fi)*(a.fi-b.fi)+(a.se-b.se)*(a.se-b.se);
 }
 
+
 int main(){
-	for(int i=999; i<1000; i+=2){
-		if(recurse(0, i))cout<<Ans<<endl;
-		else cout<<"Impossible for n: "<<i<<endl;
-		forj(i){
-			fork(i)Lg[j][k] = 0;
+	fastIO;
+	int n, g;
+	cin>>n>>g;
+	fori1(n){
+		cin>>C[i].fi>>C[i].se;
+	}
+	rem = n;
+
+	// Initialize Rem
+	fori(n)Rem[i] = i+1;
+
+	Center = {0, 0};
+	fori(rem){
+		Center.fi += C[Rem[i]].fi;
+		Center.se += C[Rem[i]].se;
+	}
+	Center.fi /= n;
+	Center.se /= n;
+
+	fori1(n/g){
+		// Calculate center of the remaining elements
+		// Center = {0, 0};
+		// fori(rem){
+		// 	Center.fi += C[Rem[i]].fi;
+		// 	Center.se += C[Rem[i]].se;
+		// }
+		// Center.fi /= n;
+		// Center.se /= n;
+		// Find the farthest element from the center of the remaining elements
+		int a = 0;
+		double m = dist(Center, C[Rem[0]]);
+		forii(1, rem){
+			if(dist(Center, C[Rem[i]]) > m){
+				m = dist(Center, C[Rem[i]]);
+				a = i;
+			}
 		}
-		Ans.clear();
+		// Add the found element to the end of the remaining elements
+		swap(Rem[a], Rem[rem-1]);
+		Ans[ct].pb(Rem[rem-1]);
+		// Add g-1 closest elements to Rem[rem-1]
+		sort(Rem, Rem+rem, [](int a, int b){return dist(C[Rem[rem-1]], C[a]) > dist(C[Rem[rem-1]], C[b]);});
+		forii(rem-g, rem-1){
+			Ans[ct].pb(Rem[i]);
+		}
+
+		// Increment Ans counter and decrement remaining elements
+		rem -= g;
+		ct++;
+	}
+	// Add the remaining elements to the most appropriate group
+	fori(rem){
+		int a = 0;
+		int m = dist(C[Rem[i]], C[Ans[0][0]]);
+		forjj(1, ct){
+			if(dist(C[Rem[i]], C[Ans[i][0]]) < m){
+				m = dist(C[Rem[i]], C[Ans[i][0]]);
+				a = j;
+			}
+		}
+		Ans[a].pb(Rem[i]);
+	}
+	cout<<n/g;
+	fork(ct){
+		auto i = Ans[k];
+		cout<<i.size()<<endl;
+		for(auto j: i)cout<<j<<" ";
+		cout<<endl;
 	}
 }
