@@ -84,115 +84,79 @@ std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
   return out;
 }
 
-
-
 const int N = 1e5+10;
-const ll M = 1e9+7;
+int M[2*N];
 
-vector<pair<char, int>> A, B, Ans;
+vector<int> sort_cyclic_shifts(string const& s) {
+    int n = s.size();
+    const int alphabet = 256;
+	
+	vector<int> p(n), c(n), cnt(max(alphabet, n), 0);
+    for (int i = 0; i < n; i++)
+        cnt[s[i]]++;
+    for (int i = 1; i < alphabet; i++)
+        cnt[i] += cnt[i-1];
+    for (int i = 0; i < n; i++)
+        p[--cnt[s[i]]] = i;
+    c[p[0]] = 0;
+    int classes = 1;
+    for (int i = 1; i < n; i++) {
+        if (s[p[i]] != s[p[i-1]])
+            classes++;
+        c[p[i]] = classes - 1;
+    }
+
+	vector<int> pn(n), cn(n);
+    for (int h = 0; (1 << h) < n; ++h) {
+        for (int i = 0; i < n; i++) {
+            pn[i] = p[i] - (1 << h);
+            if (pn[i] < 0)
+                pn[i] += n;
+        }
+        fill(cnt.begin(), cnt.begin() + classes, 0);
+        for (int i = 0; i < n; i++)
+            cnt[c[pn[i]]]++;
+        for (int i = 1; i < classes; i++)
+            cnt[i] += cnt[i-1];
+        for (int i = n-1; i >= 0; i--)
+            p[--cnt[c[pn[i]]]] = pn[i];
+        cn[p[0]] = 0;
+        classes = 1;
+        for (int i = 1; i < n; i++) {
+            pair<int, int> cur = {c[p[i]], c[(p[i] + (1 << h)) % n]};
+            pair<int, int> prev = {c[p[i-1]], c[(p[i-1] + (1 << h)) % n]};
+            if (cur != prev)
+                ++classes;
+            cn[p[i]] = classes - 1;
+        }
+        c.swap(cn);
+    }
+    return p;
+}
 
 int main(){
 	fastIO;
 	int t;
 	cin>>t;
 	while(t--){
-		string a, b;
+		string a, b, res;
 		cin>>a>>b;
-		// cerr<<a<<" "<<b<<endl;
-		int ct = 0, last = a[0];
-		A.clear(), B.clear(), Ans.clear();
-		fori(a.size()){
-			if(last == a[i])ct++;
-			else A.pb(mp(a[i-1], ct)), last = a[i], ct=1;
-		}
-		A.pb(mp(a[a.size()-1], ct)), ct=0, last = b[0];
-		fori(b.size()){
-			if(last == b[i])ct++;
-			else B.pb(mp(b[i-1], ct)), last = b[i], ct=1;
-		}
-		B.pb(mp(b[b.size()-1], ct)), ct=0;
+		string c = a + "|" + b + "|";
 
+		// Construct sorted suffix array. '{' symbol makes the process put non-empty strings before empty strings (which makes sense, since they give more options)
+		auto v = sort_cyclic_shifts(c);
 
-		int c1=0, c2=0;
-		while(c1<A.size()&&c2<B.size()){
-			// cerr<<c1<<" "<<c2<<endl;
-			if(A[c1].fi!=B[c2].fi){
-				// this is incorrect, I need to look at the one coming afterwards
-				if(A[c1].fi < B[c2].fi)Ans.pb(A[c1++]);
-				else Ans.pb(B[c2++]);
-				continue;
-			}
-			ct = 0;
-			while(c1+ct<A.size() && c2+ct<B.size() && A[c1+ct] == B[c2+ct] 
-				&& (ct==0 || A[c1+ct] < A[c1]))ct++;
-				// cerr<<ct<<endl;
-			// cerr<<c1<<" "<<c2<<" "<<ct<<endl;
-			// logic of which side to pick goes here
-			if(c1+ct==A.size()){
-				// take from b
-				fori(ct)Ans.pb(B[c2++]);
-			}
-			else if(c2+ct==B.size()){
-				// take from a
-				fori(ct)Ans.pb(A[c1++]);
-			}
-			else if(A[c1+ct] > A[c1]){
-				// we have encountered an element that is larger than the original, so it does not matter which stack we start with.
-				fori(ct)Ans.pb(B[c2++]);
-			}
-			else if(B[c2+ct] > A[c1]){
-				// we have encountered an element that is larger than the original, so it does not matter which stack we start with.
-				fori(ct)Ans.pb(A[c1++]);
-			}
-			else if(A[c1+ct].fi < B[c2+ct].fi){
-				// We want to access elements of stack A first
-				fori(ct)Ans.pb(A[c1++]);
-			}
-			else if(A[c1+ct].fi > B[c2+ct].fi){
-				// We want to access elements of stack B first
-				fori(ct)Ans.pb(B[c2++]);
-			}
-			else{
-				// the elements are equal, the amount differs
-				// We want to see what comes after the smaller stack and compare it to cur element in larger stack.
-				if(A[c1+ct].se < B[c2+ct].se){
-					// A is the smaller stack
-					if(c1+ct+1 == A.size()){
-						fori(ct+1)Ans.pb(B[c2++]);
-					}
-					else if(A[c1+ct+1].fi > B[c2+ct].fi){
-						fori(ct+1)Ans.pb(B[c2++]);
-					}
-					else{
-						//A[c1+ct+1].fi < B[c2+ct].fi
-						fori(ct+1)Ans.pb(A[c1++]);
-					}
-				}
-				else{
-					// B is the smaller stack
-					if(c2+ct+1 == B.size()){
-						fori(ct+1)Ans.pb(A[c1++]);
-					}
-					else if(B[c2+ct+1].fi > A[c1+ct].fi){
-						fori(ct+1)Ans.pb(A[c1++]);
-					}
-					else{
-						fori(ct+1)Ans.pb(B[c2++]);
-					}
-				}
-			}
+		// Save the ranks of the positions of the sorted array
+		fori(v.size())M[v[i]] = i;
+
+		// Greedily choose the alphabetically earlier remaining suffix
+		int c1 = 0, c2 = 0;
+		while(c1 != a.size() || c2 != b.size()){
+			if(M[c1] < M[c2 + a.size() + 1]) res += a[c1++];
+			else res += b[c2++];
 		}
-		forii(c1, A.size())Ans.pb(A[i]);
-		forii(c2, B.size())Ans.pb(B[i]);
-		// for(auto c: A){
-		// 	cerr<<c.fi<<" "<<c.se<<endl;
-		// }
-		// for(auto c: B){
-		// 	cerr<<c.fi<<" "<<c.se<<endl;
-		// }
-		for(auto c: Ans){
-			fori(c.se)cout<<c.fi;
-		}
-		cout<<endl;
+
+		// Print the result
+		cout<<res<<endl;
 	}
 }
