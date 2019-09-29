@@ -87,11 +87,11 @@ std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
 const int N = 1e5+10;
 int M[2*N];
 
-vector<int> sort_cyclic_shifts(string const& s) {
+vi sort_cyclic_shifts(string const& s) {
     int n = s.size();
     const int alphabet = 256;
 	
-	vector<int> p(n), c(n), cnt(max(alphabet, n), 0);
+	vi p(n), c(n), cnt(max(alphabet, n), 0);
     for (int i = 0; i < n; i++)
         cnt[s[i]]++;
     for (int i = 1; i < alphabet; i++)
@@ -106,7 +106,7 @@ vector<int> sort_cyclic_shifts(string const& s) {
         c[p[i]] = classes - 1;
     }
 
-	vector<int> pn(n), cn(n);
+	vi pn(n), cn(n);
     for (int h = 0; (1 << h) < n; ++h) {
         for (int i = 0; i < n; i++) {
             pn[i] = p[i] - (1 << h);
@@ -123,8 +123,8 @@ vector<int> sort_cyclic_shifts(string const& s) {
         cn[p[0]] = 0;
         classes = 1;
         for (int i = 1; i < n; i++) {
-            pair<int, int> cur = {c[p[i]], c[(p[i] + (1 << h)) % n]};
-            pair<int, int> prev = {c[p[i-1]], c[(p[i-1] + (1 << h)) % n]};
+            pii cur = {c[p[i]], c[(p[i] + (1 << h)) % n]};
+            pii prev = {c[p[i-1]], c[(p[i-1] + (1 << h)) % n]};
             if (cur != prev)
                 ++classes;
             cn[p[i]] = classes - 1;
