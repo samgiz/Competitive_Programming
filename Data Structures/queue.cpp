@@ -14,30 +14,30 @@ private:
 			this->val = a;
 		}
 	};
-	Node *root=nullptr, *back=nullptr;
+	Node *head=nullptr, *tail=nullptr;
 	int sz = 0;
 public:
 
 	T front(){
-		if(!root)
-			throw underflow_error("attempted to access front of empty stack");
-		return root->val;
+		if(!head)
+			throw underflow_error("attempted to access front of empty queue");
+		return head->val;
 	}
 
 	void pop(){
-		if(!root)
+		if(!head)
 			throw underflow_error("attempted to pop from empty queue");
-		root=root->prev;
+		head=head->prev;
 		sz--;
-		if(sz==0)back = nullptr;
+		if(sz==0)tail = nullptr;
 	}
 
 	void push(T a){
 		Node* tmp = new Node(a);
-		if(back)back->prev = tmp;
-		back = tmp;
+		if(tail)tail->prev = tmp;
+		tail = tmp;
 		sz++;
-		if(sz==1)root = tmp;
+		if(sz==1)head = tmp;
 	}
 
 	int size(){
