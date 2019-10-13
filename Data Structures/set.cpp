@@ -1,8 +1,6 @@
 #include <stdexcept>
 #include <iostream>
 
-
-
 using namespace std;
 
 template <class T>
@@ -26,7 +24,7 @@ public:
 	int depth(){
 
 	}
-	T nthElement(){
+	T nthElement(int n){
 
 	}
 	bool empty(){
