@@ -15,25 +15,25 @@ private:
 			this->val = a;
 		}
 	};
-	Node *root=nullptr;
+	Node *head=nullptr;
 	int sz = 0;
 public:
 
 	T top(){
-		if(!root)
+		if(!head)
 			throw underflow_error("attempted to get top of empty stack");
-		return root->val;
+		return head->val;
 	}
 
 	void pop(){
-		if(!root)
+		if(!head)
 			throw underflow_error("attempted to pop from empty stack");
-		root=root->next;
+		head=head->next;
 		sz--;
 	}
 
 	void push(T a){
-		root = new Node(a, root);
+		head = new Node(a, head);
 		sz++;
 	}
 
