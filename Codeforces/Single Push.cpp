@@ -127,6 +127,8 @@ int main(){
         }
         if(f) cout<<"YES"<<endl;
         else cout<<"NO"<<endl;
-
+        // Clear A and B
+        for(auto &i: A)i=0;
+        for(auto &i: B)i=0;
     }
 }
