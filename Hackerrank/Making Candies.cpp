@@ -71,101 +71,45 @@ typedef vector<pll> vpll;
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  if ( !v.empty() ) {
-    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    if ( !v.empty() ) {
+        std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+    }
+    return out;
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-  if ( !v.empty() ) {
+    if ( !v.empty() ) {
     std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    }
+    return out;
 }
 
 const int N = 1e5+10;
 const ll M = 1e9+7;
-ll sum = 0;
-ll Val[N], TVal[N];
-vi E[N];
-set<ll>S, Q;
-ll ans = -1;
-
-ll init(int v, int par){
-	TVal[v] = Val[v];
-	for(auto u: E[v]){
-		if(u==par)continue;
-		TVal[v] += init(u, v);
-	}
-	return TVal[v];
-}
-
-void recurse(int v, int par){
-	ll am = TVal[v];
-	// cerr<<"V "<<v<<" "<<am<<" "<<sum - 2*am<<" "<<(sum - am)/2<<" "<<endl;
-	if(sum - 2*am <= am && (S.count(sum - 2*am) || Q.count(sum - 2*am))){
-		if(ans == -1)ans = am - (sum - 2*am);
-		else ans = min(ans, am - (sum - 2*am));
-		// cerr<<2<<" "<<ans<<endl;
-	}
-	for(auto u: E[v]){
-		if(u==par)continue;
-		if(Q.count(sum - TVal[u]) == 0){
-			Q.insert(sum - TVal[u]);
-			recurse(u, v);
-			Q.erase(sum - TVal[u]);
-		}
-		else recurse(u, v);
-	}
-	// am, am, sum - 2*am: 2 subtrees with the same size. Should be after loop
-	// am, sum - 2*am, am: encounter the matching subtree first. This should be before loop
-	// am, (sum - am)/2, (sum - am)/2: encounter the matching subtree second
-	if(sum - 2*am <= am && (S.count(am) || Q.count(am))){
-		if(ans == -1){
-			// cerr<<"A "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = am - (sum - 2*am);
-		}
-		else{
-			// cerr<<"B "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = min(ans, am - (sum - 2*am));
-		} 
-		// cerr<<1<<" "<<am<<" "<<sum - 2*am<<" "<<am - (sum - 2*am)<<" "<<ans<<endl;
-	}
-	
-	if((sum-am)%2 == 0 && am <= (sum - am)/2 && (S.count((sum - am)/2) || Q.count((sum - am)/2))){
-		if(ans == -1)ans = (sum - am)/2 - am;
-		else ans = min(ans, (sum - am)/2 - am);
-		// cerr<<3<<" "<<ans<<endl;
-	}
-	S.insert(am);
-}
 
 int main(){
-	fastIO;
-	int q;
-	cin>>q;
-	while(q--){
-		int n;
-		cin>>n;
-		sum = 0;
-		ans = -1;
-		S.clear();
-		fori1(n)E[i].clear();
-		fori1(n){
-			cin>>Val[i];
-			sum+=Val[i];
-		}
-
-		fori(n-1){
-			int u, v;
-			cin>>u>>v;
-			E[u].pb(v);
-			E[v].pb(u);
-		}
-		init(1, 0);
-		recurse(1, 0);
-		cout<<ans<<endl;
-		// cerr<<S<<endl;
-	}
+    fastIO;
+    ll m0, w0, p0, n0;
+    cin>>m0>>w0>>p0>>n0;
+    __int128 n = n0, m = m0, p = p0, w = w0;
+    __int128 sq = sqrt(n0) + 1;
+    __int128 cur_candies = 0;
+    __int128 cur_day = 0;
+    // Set initial answer assuming that no machines will be bought
+    __int128 ans = (n-1) / (m*w) + 1;
+    // cerr<<cur_candies<<" "<<cur_day<<" "<<m<<" "<<w<<endl;
+    while(w <= sq && m <= sq && cur_day <= ans){
+        if(cur_candies < p){
+            cur_day += (p-1-cur_candies) / (m*w) + 1;
+            cur_candies += ((p-1-cur_candies) / (m*w) + 1) * (m*w);
+        }
+        if(w < m){
+            w++;
+        }
+        else m++;
+        cur_candies -= p;
+        // cerr<<cur_candies<<" "<<cur_day<<" "<<m<<" "<<w<<" "<<cur_day + (n-1-cur_candies) / (m*w) + 1<<endl;
+        ans = min(ans, cur_day + (n-1-cur_candies) / (m*w) + 1);
+    }
+    cout<<(ll)ans;
 }
