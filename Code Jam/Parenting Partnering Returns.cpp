@@ -71,98 +71,62 @@ typedef vector<pll> vpll;
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  if ( !v.empty() ) {
-    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    if ( !v.empty() ) {
+        std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+    }
+    return out;
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-  if ( !v.empty() ) {
+    if ( !v.empty() ) {
     std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    }
+    return out;
 }
 
-const int N = 1e5+10;
+const int N = 1005;
 const ll M = 1e9+7;
-ll sum = 0;
-ll Val[N], TVal[N];
-vi E[N];
-set<ll>S, Q;
-ll ans = -1;
 
-ll init(int v, int par){
-	TVal[v] = Val[v];
-	for(auto u: E[v]){
-		if(u==par)continue;
-		TVal[v] += init(u, v);
-	}
-	return TVal[v];
+vector<pair<pii, int>>V;
+
+char let = 'C';
+void switch_let(){
+    if(let == 'C')let = 'J';
+    else let = 'C';
 }
 
-void recurse(int v, int par){
-	ll am = TVal[v];
-	// cerr<<"V "<<v<<" "<<am<<" "<<sum - 2*am<<" "<<(sum - am)/2<<" "<<endl;
-	if(sum - 2*am <= am && (S.count(sum - 2*am) || Q.count(sum - 2*am))){
-		if(ans == -1)ans = am - (sum - 2*am);
-		else ans = min(ans, am - (sum - 2*am));
-		// cerr<<2<<" "<<ans<<endl;
-	}
-	for(auto u: E[v]){
-		if(u==par)continue;
-		Q.insert(sum - TVal[u]);
-		recurse(u, v);
-		Q.erase(sum - TVal[u]);
-	}
-	// am, am, sum - 2*am: 2 subtrees with the same size. Should be after loop
-	// am, sum - 2*am, am: encounter the matching subtree first. This should be before loop
-	// am, (sum - am)/2, (sum - am)/2: encounter the matching subtree second
-	if(sum - 2*am <= am && (S.count(am) || Q.count(am))){
-		if(ans == -1){
-			// cerr<<"A "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = am - (sum - 2*am);
-		}
-		else{
-			// cerr<<"B "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = min(ans, am - (sum - 2*am));
-		} 
-		// cerr<<1<<" "<<am<<" "<<sum - 2*am<<" "<<am - (sum - 2*am)<<" "<<ans<<endl;
-	}
-	
-	if((sum-am)%2 == 0 && am <= (sum - am)/2 && (S.count((sum - am)/2) || Q.count((sum - am)/2))){
-		if(ans == -1)ans = (sum - am)/2 - am;
-		else ans = min(ans, (sum - am)/2 - am);
-		// cerr<<3<<" "<<ans<<endl;
-	}
-	S.insert(am);
-}
+char ans[N];
 
 int main(){
-	fastIO;
-	int q;
-	cin>>q;
-	while(q--){
-		int n;
-		cin>>n;
-		sum = 0;
-		ans = -1;
-		S.clear();
-		fori1(n)E[i].clear();
-		fori1(n){
-			cin>>Val[i];
-			sum+=Val[i];
-		}
-
-		fori(n-1){
-			int u, v;
-			cin>>u>>v;
-			E[u].pb(v);
-			E[v].pb(u);
-		}
-		init(1, 0);
-		recurse(1, 0);
-		cout<<ans<<endl;
-		// cerr<<S<<endl;
-	}
+    fastIO;
+    int t;
+    cin>>t;
+    forh1(t){
+        cout<<"Case #"<<h<<": ";
+        int n;
+        cin>>n;
+        V.clear();
+        fori(n){
+            int s, e;
+            cin>>s>>e;
+            V.pb({{s, e}, i});
+        }
+        sort(V.begin(), V.end());
+        int a = 0, b = 0;
+        
+        for(auto i: V){
+            if(a > b)swap(a, b), switch_let();
+            if(i.fi.fi < a){
+                cout<<"IMPOSSIBLE"<<endl;
+                goto end;
+            }
+            ans[i.se] = let;
+            a = i.fi.se;
+        }
+        for(int i=0; i<n; i++){
+            cout<<ans[i];
+        }
+        cout<<endl;
+        end:;
+    }
 }

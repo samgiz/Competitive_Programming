@@ -59,7 +59,7 @@ typedef int def; //default parameter for loops
 #define forhh_(a, b) for(def h=(b)-1; h>=(a); h--)
 
 #define fastIO ios_base::sync_with_stdio(0);cin.tie(0);cout.tie(0)
-#define endl '\n'
+// #define endl '\n'
 
 typedef long long ll;
 typedef vector<int> vi;
@@ -71,98 +71,88 @@ typedef vector<pll> vpll;
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  if ( !v.empty() ) {
-    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    if ( !v.empty() ) {
+        std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+    }
+    return out;
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-  if ( !v.empty() ) {
+    if ( !v.empty() ) {
     std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    }
+    return out;
 }
 
 const int N = 1e5+10;
 const ll M = 1e9+7;
-ll sum = 0;
-ll Val[N], TVal[N];
-vi E[N];
-set<ll>S, Q;
-ll ans = -1;
 
-ll init(int v, int par){
-	TVal[v] = Val[v];
-	for(auto u: E[v]){
-		if(u==par)continue;
-		TVal[v] += init(u, v);
-	}
-	return TVal[v];
+int t, b;
+int i1=1, i2=1;
+int ans[200];
+
+void handle(int i, int v1, int v2){
+    int j = b - i + 1;
+    if(v1 == v2){
+        i1 = i;
+    }
+    if(v1 != v2){
+        i2 = i;
+    }
+    ans[i] = v1;
+    ans[j] = v2;
 }
-
-void recurse(int v, int par){
-	ll am = TVal[v];
-	// cerr<<"V "<<v<<" "<<am<<" "<<sum - 2*am<<" "<<(sum - am)/2<<" "<<endl;
-	if(sum - 2*am <= am && (S.count(sum - 2*am) || Q.count(sum - 2*am))){
-		if(ans == -1)ans = am - (sum - 2*am);
-		else ans = min(ans, am - (sum - 2*am));
-		// cerr<<2<<" "<<ans<<endl;
-	}
-	for(auto u: E[v]){
-		if(u==par)continue;
-		Q.insert(sum - TVal[u]);
-		recurse(u, v);
-		Q.erase(sum - TVal[u]);
-	}
-	// am, am, sum - 2*am: 2 subtrees with the same size. Should be after loop
-	// am, sum - 2*am, am: encounter the matching subtree first. This should be before loop
-	// am, (sum - am)/2, (sum - am)/2: encounter the matching subtree second
-	if(sum - 2*am <= am && (S.count(am) || Q.count(am))){
-		if(ans == -1){
-			// cerr<<"A "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = am - (sum - 2*am);
-		}
-		else{
-			// cerr<<"B "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = min(ans, am - (sum - 2*am));
-		} 
-		// cerr<<1<<" "<<am<<" "<<sum - 2*am<<" "<<am - (sum - 2*am)<<" "<<ans<<endl;
-	}
-	
-	if((sum-am)%2 == 0 && am <= (sum - am)/2 && (S.count((sum - am)/2) || Q.count((sum - am)/2))){
-		if(ans == -1)ans = (sum - am)/2 - am;
-		else ans = min(ans, (sum - am)/2 - am);
-		// cerr<<3<<" "<<ans<<endl;
-	}
-	S.insert(am);
+void print_answer(){
+    fori1(b)cout<<ans[i];
+    cout<<endl;
+    char ret;
+    cin>>ret;
+    if(ret != 'Y')exit(0);
+}
+void switcheroo(){
+    bool s1, s2;
+    int val1, val2;
+    cout<<i1<<endl;
+    cin>>val1;
+    cout<<i2<<endl;
+    cin>>val2;
+    s1 = ans[i1] != val1;
+    s2 = ans[i2] != val2;
+    if(s1){
+        fori1(b/2){
+            if(ans[i] == ans[b-i+1]){
+                ans[i] = 1 - ans[i];
+                ans[b-i+1] = 1 - ans[b-i+1];
+            }
+        }
+    }
+    if(s2){
+        fori1(b/2){
+            if(ans[i] != ans[b-i+1]){
+                ans[i] = 1 - ans[i];
+                ans[b-i+1] = 1 - ans[b-i+1];
+            }
+        }
+    }
 }
 
 int main(){
-	fastIO;
-	int q;
-	cin>>q;
-	while(q--){
-		int n;
-		cin>>n;
-		sum = 0;
-		ans = -1;
-		S.clear();
-		fori1(n)E[i].clear();
-		fori1(n){
-			cin>>Val[i];
-			sum+=Val[i];
-		}
-
-		fori(n-1){
-			int u, v;
-			cin>>u>>v;
-			E[u].pb(v);
-			E[v].pb(u);
-		}
-		init(1, 0);
-		recurse(1, 0);
-		cout<<ans<<endl;
-		// cerr<<S<<endl;
-	}
+    fastIO;
+    
+    cin>>t>>b;
+    for(int _=0; _<t; _++){
+        int val1, val2;
+        cout<<1<<endl;cin>>val1;
+        cout<<b<<endl;cin>>val2;
+        handle(1, val1, val2);
+        for(int i=2; i<=b/2; i+=4){
+            for(int j=0; j<4; j++){
+                cout<<i+j<<endl;cin>>val1;
+                cout<<b-i+1-j<<endl;cin>>val2;
+                handle(i+j, val1, val2);
+            }
+            switcheroo();
+        }
+        print_answer();
+    }
 }

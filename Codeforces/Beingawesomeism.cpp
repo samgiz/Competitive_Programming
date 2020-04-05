@@ -71,98 +71,78 @@ typedef vector<pll> vpll;
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-  if ( !v.empty() ) {
-    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    if ( !v.empty() ) {
+        std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
+    }
+    return out;
 }
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::set<T>& v) {
-  if ( !v.empty() ) {
+    if ( !v.empty() ) {
     std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, " "));
-  }
-  return out;
+    }
+    return out;
 }
 
-const int N = 1e5+10;
-const ll M = 1e9+7;
-ll sum = 0;
-ll Val[N], TVal[N];
-vi E[N];
-set<ll>S, Q;
-ll ans = -1;
-
-ll init(int v, int par){
-	TVal[v] = Val[v];
-	for(auto u: E[v]){
-		if(u==par)continue;
-		TVal[v] += init(u, v);
-	}
-	return TVal[v];
-}
-
-void recurse(int v, int par){
-	ll am = TVal[v];
-	// cerr<<"V "<<v<<" "<<am<<" "<<sum - 2*am<<" "<<(sum - am)/2<<" "<<endl;
-	if(sum - 2*am <= am && (S.count(sum - 2*am) || Q.count(sum - 2*am))){
-		if(ans == -1)ans = am - (sum - 2*am);
-		else ans = min(ans, am - (sum - 2*am));
-		// cerr<<2<<" "<<ans<<endl;
-	}
-	for(auto u: E[v]){
-		if(u==par)continue;
-		Q.insert(sum - TVal[u]);
-		recurse(u, v);
-		Q.erase(sum - TVal[u]);
-	}
-	// am, am, sum - 2*am: 2 subtrees with the same size. Should be after loop
-	// am, sum - 2*am, am: encounter the matching subtree first. This should be before loop
-	// am, (sum - am)/2, (sum - am)/2: encounter the matching subtree second
-	if(sum - 2*am <= am && (S.count(am) || Q.count(am))){
-		if(ans == -1){
-			// cerr<<"A "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = am - (sum - 2*am);
-		}
-		else{
-			// cerr<<"B "<<ans<<" "<<am - (sum - 2*am)<<endl;
-			ans = min(ans, am - (sum - 2*am));
-		} 
-		// cerr<<1<<" "<<am<<" "<<sum - 2*am<<" "<<am - (sum - 2*am)<<" "<<ans<<endl;
-	}
-	
-	if((sum-am)%2 == 0 && am <= (sum - am)/2 && (S.count((sum - am)/2) || Q.count((sum - am)/2))){
-		if(ans == -1)ans = (sum - am)/2 - am;
-		else ans = min(ans, (sum - am)/2 - am);
-		// cerr<<3<<" "<<ans<<endl;
-	}
-	S.insert(am);
-}
+string s[65];
 
 int main(){
-	fastIO;
-	int q;
-	cin>>q;
-	while(q--){
-		int n;
-		cin>>n;
-		sum = 0;
-		ans = -1;
-		S.clear();
-		fori1(n)E[i].clear();
-		fori1(n){
-			cin>>Val[i];
-			sum+=Val[i];
-		}
-
-		fori(n-1){
-			int u, v;
-			cin>>u>>v;
-			E[u].pb(v);
-			E[v].pb(u);
-		}
-		init(1, 0);
-		recurse(1, 0);
-		cout<<ans<<endl;
-		// cerr<<S<<endl;
-	}
+    fastIO;
+    int t;
+    cin>>t;
+    fori(t){
+        int n, m;
+        cin>>n>>m;
+        fori(n)cin>>s[i];
+        bool f_corner = 0, 
+             f_side = 0, 
+             f_row = 0, 
+             f_side_row = 0, 
+             f_all = 1, 
+             f_any = 0;
+        fori(n){
+            forj(m){
+                if(s[i][j] == 'A'){
+                    f_any = true;
+                    f_side |= i == 0 || j == 0 || i == n-1 || j == m-1;
+                    f_corner |= (i == 0 || i == n-1) && (j==0 || j==m-1);
+                }
+                else f_all = false;
+            }
+        }
+        fori(n){
+            bool fr = true;
+            forj(m){
+                fr &= (s[i][j] == 'A');
+            }
+            // cerr<<i<<" "<<fr<<endl;
+            f_row |= fr;
+            if(i == 0 || i == n-1)f_side_row |= fr;
+        }
+        forj(m){
+            bool fr = true;
+            fori(n){
+                fr &= (s[i][j] == 'A');
+            }
+            // cerr<<j<<" "<<fr<<endl;
+            f_row |= fr;
+            if(j == 0 || j == m-1)f_side_row |= fr;
+        }
+        if(!f_any){
+            cout<<"MORTAL"<<endl;
+        }
+        else if(f_all){
+            cout<<0<<endl;
+        }
+        else if(f_side_row){
+            cout<<1<<endl;
+        }
+        else if(f_corner || f_row){
+            cout<<2<<endl;
+        }
+        else if(f_side){
+            cout<<3<<endl;
+        }
+        else cout<<4<<endl;
+    }
 }
