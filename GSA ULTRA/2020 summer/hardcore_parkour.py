@@ -1,5 +1,5 @@
 def solution(ps):
-    LARGE = 1e10
+    LARGE = int(1e9)
     dp = {}
     for i in ps[0]:
         dp[i] = {5: 5}
@@ -13,7 +13,7 @@ def solution(ps):
                 start += 1
             if start == len(dp_vals):
                 break
-            new_dp[j] = {}
+            new_dp_j = {}
             cur = start
             while cur < len(dp_vals) and dp_vals[cur] <= j + 5:
                 el = dp_vals[cur]
@@ -22,20 +22,26 @@ def solution(ps):
                     cost = d[speed]
                     if abs(el - j) <= 5:
                         if el < j:
-                            new_dp[j][min(10, speed + 1)] = min(new_dp[j].get(min(10, speed + 1), LARGE), cost + min(10, speed + 1))
+                            m = min(10, speed + 1)
+                            new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
                         elif el > j:
-                            new_dp[j][max(1, speed - 1)] = min(new_dp[j].get(max(1, speed - 1), LARGE), cost + max(1, speed - 1))
+                            m = max(1, speed - 1)
+                            new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
                         else:
-                            new_dp[j][speed] = min(new_dp[j].get(speed, LARGE), cost + speed)
+                            new_dp_j[speed] = min(new_dp_j.get(speed, LARGE), cost + speed)
                 cur += 1
             # idea: prune out sctrictly worse speed values at the same location here
+            m = LARGE
+            for k, v in sorted(new_dp_j.items()):
+                # print(i, j, k, v)
+                if v >= m:
+                    # print('deleting')
+                    del new_dp_j[k]
+                m = min(m, v)
+            new_dp[j] = new_dp_j
         dp = new_dp
-        # print(dp)
-    ans = LARGE
     # print(dp)
-    for i in dp:
-        for j in dp[i]:
-            # print(j, dp[i][j])
-            ans = min(ans, dp[i][j])
+    ans = min([dp[i][j] for i in dp for j in dp[i]])
     return ans
-print(solution([(1, 2), (3, 8)]))
+# print(solution([(1, 4), (3, 8)]))
+print(solution([(16, 18, 14), (19, 18, 17), (20, 17, 21), (20, 10, 19), (7, 4, 14), (11, 3, 4), (8, 5, 15, 4), (3, 4, 2, 6), (10, 8, 12), (10, 17, 2, 0, 11, 16)]))
