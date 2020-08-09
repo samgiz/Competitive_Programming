@@ -250,13 +250,13 @@ def naive_solution(n, rs):
 # pos[i] stores the node occupied by the ith group of people
 pos = {}
 root = None
-import sys
+# import sys
 
 # Every node should have 0 children or 2 children
 class Node:
-    def __init__(self, size, position, tp=-1):
+    def __init__(self, size, tp=-1):
         self.size = size # size of cell in leaf node, max of sizes in intermediate node
-        self.pos = position # position of the space. Only relevant for leaf nodes
+        # self.pos = position # position of the space. Only relevant for leaf nodes
         self.prev = None # previous node in linked list
         self.next = None # next node in linked list
         self.par = None # parent in tree
@@ -267,118 +267,76 @@ class Node:
 
     # Update the max size based on the maximums of children
     def update(self):
-        global root
-        # if not in_tree(self, root):
-        #     print("self not in root update", self.pos, self.size)
-        #     sys.exit()
-        # if self.par and not in_tree(self.par, root):
-        #     print("parent not in root update", self.pos, self.size)
-        #     sys.exit()
         # Update height
         if not self.lc:
             self.height = 0
+            return
         else:
             self.height = 1 + max(self.lc.height, self.rc.height)
 
         # Update size
-        if not self.lc: # should not update height of leaf nodes
-            return
         # Reset size and get maximum size from children
-        self.size = 0
+        sz = 0
         if self.lc.type == -1:
-            self.size = max(self.size, self.lc.size)
+            sz = max(sz, self.lc.size)
         if self.rc.type == -1:
-            self.size = max(self.size, self.rc.size)
+            sz = max(sz, self.rc.size)
+        self.size = sz
 
     # Insert new node into tree
     def fill(self, size, i):
-        global root
-        # if not in_tree(self, root):
-        #     print("self not in root fill", self.pos, self.size)
-        #     sys.exit()
-        # if self.par and not in_tree(self.par, root):
-        #     print("parent not in root fill", self.pos, self.size)
-        #     sys.exit()
-        if self.lc == None: # This is a leaf node, so we insert the new leaf here
-            global pos
-            # global root
-            if self.size == size: # Just use this node, as it exactly fits the required size
-                self.type = i
-                pos[i] = self # Keep track for when we're vacating
-                # print("added !!!!!!!", self.pos, self.pos + self.size, self.type)
-            else: # split node into 2, with the left being the occupied part
-                # Set up the left and right subtrees
-                self.lc = Node(size, self.pos, i)
-                self.rc = Node(self.size - size, self.pos + size)
-
-                pos[i] = self.lc # Keep track for when we'll be vacating
-
-                self.lc.par = self
-                self.lc.prev = self.prev
-                self.lc.next = self.rc
-                
-                self.rc.par = self
-                self.rc.prev = self.lc
-                self.rc.next = self.next
-
-                if self.prev:
-                    self.prev.next = self.lc
-                if self.next:
-                    self.next.prev = self.rc
-                # print("added", self.lc.pos, self.lc.pos + self.lc.size, i, "remaining", self.rc.pos, self.rc.pos + self.rc.size)
-                # print(print_tree(root))
-                # print(self.pos, self.size)
-            # Rebalance the tree
-            self.rebalance()
-        else:
-            if self.lc.size >= size and self.lc.type == -1:
-                self.lc.fill(size, i)
+        global pos
+        n = self
+        while n.lc:
+            if n.lc.size >= size and n.lc.type == -1:
+                n = n.lc
             else:
-                self.rc.fill(size, i)
+                n = n.rc
+        
+        # global root
+        if n.size == size: # Just use this node, as it exactly fits the required size
+            n.type = i
+            pos[i] = n # Keep track for when we're vacating
+            # print("added !!!!!!!", self.pos, self.pos + self.size, self.type)
+        else: # split node into 2, with the left being the occupied part
+            # Set up the left and right subtrees
+            n.lc = Node(size, i)
+            n.rc = Node(n.size - size)
+
+            pos[i] = n.lc # Keep track for when we'll be vacating
+            
+            n.lc.par = n
+            n.lc.prev = n.prev
+            n.lc.next = n.rc
+            
+            n.rc.par = n
+            n.rc.prev = n.lc
+            n.rc.next = n.next
+
+            if n.prev:
+                n.prev.next = n.lc
+            if n.next:
+                n.next.prev = n.rc
+        # Rebalance the tree
+        n.rebalance()
         
     
     def vacate(self):
-        global root
-        # if not in_tree(self, root):
-        #     print("self not in root vacate", self.pos, self.size)
-        #     sys.exit()
-        # if self.par and not in_tree(self, root):
-        #     print("parent not in root vacate", self.pos, self.size)
-        #     sys.exit()
-        # print("vacating", self.pos, self.pos + self.size, self.type)
-        # if self.next and not in_tree(self.next, root):
-        #     print("next not in tree vacate", self.pos, self.pos + self.size)
-        #     sys.exit()
-        # if self.next and self.next.lc:
-        #     print("next has children vacate", self.pos, self.pos + self.size, self.type, ', ', self.next.pos, self.next.pos + self.next.size, self.next.type)
-        #     sys.exit()
-        # if self.prev and not in_tree(self.prev, root):
-        #     print("prev not in tree vacate", self.pos, self.pos + self.size)
-        #     sys.exit()
-        # if self.prev and self.prev.lc:
-        #     print("prev has children vacate", self.pos, self.pos + self.size)
-        #     sys.exit()
         self.type = -1
         self_next = self.next
-        if self.next and self.next.type == -1:
-            # print("space on the right", self.next.pos, self.next.pos + self.next.size, self.next.type)
-            self.size += self.next.size
-            self.next.size = 0
-            if self.next.next:
-                self.next.next.prev = self
-            self.next = self.next.next
-        if self.prev and self.prev.type == -1:
-            # print("space on the left", self.prev.pos, self.prev.pos + self.prev.size, self.prev.type)
-            # print_list()
-            self_prev = self.prev
-            self.size += self.prev.size
-            self.pos = self.prev.pos
-            self.prev.size = 0
-            if self.prev.prev:
-                self.prev.prev.next = self            
-            self.prev = self.prev.prev
-            # print_list()
-            # print("printing list")
+        self_prev = self.prev
+        if self_next and self_next.type == -1:
+            self.size += self_next.size
+            self_next.size = 0
+            if self_next.next:
+                self_next.next.prev = self
+            self.next = self_next.next
+        if self_prev and self_prev.type == -1:
+            self.size += self_prev.size
+            self_prev.size = 0
+            if self_prev.prev:
+                self_prev.prev.next = self         
+            self.prev = self_prev.prevy
             self_prev.delete()
             
             # print_list()
@@ -390,26 +348,8 @@ class Node:
             n.update()
             n = n.par
     def delete(self):
-        global root
-        # if not in_tree(self, root):
-        #     print("self not in root delete", self.pos, self.size)
-        #     sys.exit()
-        # if self.par and not in_tree(self.par, root):
-        #     print("parent not in root delete", self.pos, self.size)
-        #     sys.exit()
-        # Update position and size
-        # global root
-        # print(print_tree(root))
-        # print(print_tree(self.par))
-        # print("merging: ", self.par.lc.pos, self.par.lc.pos+self.par.lc.size, self.par.rc.pos, self.par.rc.pos+self.par.rc.size)
-        # if not self.par or not self.par.lc or not self.par.rc:
-        #     print("parent", self.par)
-        #     print("left", self.par.lc)
-        #     print("right", self.par.rc)
         self.par.size = self.par.lc.size + self.par.rc.size
         if self.par.lc == self:
-            # print("left child")
-            self.par.pos = self.par.rc.pos
             # Update the type
             self.par.type = self.par.rc.type
             # update list structure
@@ -429,7 +369,6 @@ class Node:
             
         else: # mirror the if statement
             # print("right child")
-            self.par.pos = self.par.lc.pos
             self.par.type = self.par.lc.type
             self.par.prev = self.par.lc.prev
 
@@ -457,50 +396,21 @@ class Node:
         # print_list()
         self.par.rebalance()
     def rebalance(self):
-        global root
-        # if not in_tree(self, root):
-        #     print("self not in root revbalance", self.pos, self.size)
-        #     sys.exit()
-        # if self.par and not in_tree(self.par, root):
-        #     print("parent not in root rebalance", self.pos, self.size)
-        #     sys.exit()
-        # global root
-        self.update()
-        if self.lc and abs(self.lc.height - self.rc.height) > 1:
-            # print("rebalancing", self.pos, self.size)
-            # print("rebalancing heights:", self.height, self.lc.height, self.rc.height)
-            # print(print_tree(root))
-            # print(print_tree(self))
-            # print("rebalancing", self.lc.height, self.rc.height)
-            if self.lc.height > self.rc.height: # left rotate
-                # print("  left higher", self.lc.lc.height, self.lc.rc.height)
-                if self.lc.lc.height < self.lc.rc.height:
-                    # print("    rotating left child left")
-                    # print("    ", print_tree(self))
-                    self.lc.lrotate()
-                    
-                # print("  rotating right")
-                # print("  ", print_tree(root))
-                # print("  ", print_tree(self))
-                
-                self.rrotate()
-            else:
-                # print("  right higher", self.rc.rc.height, self.rc.lc.height)
-                if self.rc.rc.height < self.rc.lc.height:
-                    # print("    rotating right child right")
-                    # print("    ", print_tree(self))
-                    self.rc.rrotate()
-                # print("  rotating left")
-                # print("  ", print_tree(root))
-                # print("  ", print_tree(self))
-                self.lrotate()
-        # else:
-            # print("no rebalancing", self.pos, self.size, self.type)     
-            # print(print_tree(self.par.par))
-            # print(print_tree(root))
-            # print("heights fixed", self.lc.height, self.rc.height, self.par.lc.height, self.par.rc.height)
-        if self != root:
-            self.par.rebalance()
+        n = self
+        while n:
+            n.update()
+            if n.lc and abs(n.lc.height - n.rc.height) > 1: # needs rotating
+                if n.lc.height > n.rc.height: # right rotate
+                    if n.lc.lc.height < n.lc.rc.height:
+                        n.lc.lrotate()                    
+                    n.rrotate()
+                else: # left rotate
+                    if n.rc.rc.height < n.rc.lc.height:
+                        n.rc.rrotate()
+                    n.lrotate()
+
+            n = n.par
+
     def lrotate(self):
         global root
         # if not in_tree(self, root):
@@ -521,13 +431,11 @@ class Node:
             y.lc.par = self
         y.par = self.par
         if not self.par:
-            # global root
+            global root
             root = y
         elif self == self.par.lc:
-            # print(" left child")
             self.par.lc = y
         else:
-            # print(" right child")
             self.par.rc = y
         y.lc = self
         self.par = y
@@ -536,7 +444,7 @@ class Node:
         # print("lrotate end", self.pos, self.size, self.type, y.pos, y.size, y.type)
         # print(print_tree(root))
     def rrotate(self):
-        global root
+        # global root
         # if not in_tree(self, root):
         #     print("self not in root rrotate", self.pos, self.size)
         #     sys.exit()
@@ -555,7 +463,7 @@ class Node:
             y.rc.par = self
         y.par = self.par
         if not self.par:
-            # global root
+            global root
             root = y
         elif self == self.par.rc:
             self.par.rc = y
@@ -567,37 +475,37 @@ class Node:
         y.update()
         # print(print_tree(root))
 
-def in_tree(node, tree):
-    if tree == None:
-        return False
-    return node == tree or in_tree(node, tree.lc) or in_tree(node, tree.rc)
+# def in_tree(node, tree):
+#     if tree == None:
+#         return False
+#     return node == tree or in_tree(node, tree.lc) or in_tree(node, tree.rc)
 
-def print_tree(node):
-    if not node:
-        return ""
-    return '(' + str(node.pos) + ', ' + str(node.size) + ', ' + str(node.type) + ', [' + print_tree(node.lc) + ', ' + print_tree(node.rc) + ']'
-def print_list():
-    nodes = [root]
-    previous = None
-    while len(nodes) > 0:
-        top = nodes.pop()
-        # print(top.pos, top.size, top.type)
-        if not top.lc:
-            prev = str((top.prev.pos, top.prev.size, top.prev.type)) if top.prev else None
-            nxt = str((top.next.pos, top.next.size, top.next.type)) if top.next else None
-            print(prev, (top.pos, top.size, top.type), nxt)
-            if previous != top.prev or (previous and previous.next != top):
-                print("previous not correct")
-                sys.exit()
-            previous = top
-        if top.lc:
-            nodes.append(top.rc)
-            nodes.append(top.lc)
+# def print_tree(node):
+#     if not node:
+#         return ""
+#     return '(' + str(node.pos) + ', ' + str(node.size) + ', ' + str(node.type) + ', [' + print_tree(node.lc) + ', ' + print_tree(node.rc) + ']'
+# def print_list():
+#     nodes = [root]
+#     previous = None
+#     while len(nodes) > 0:
+#         top = nodes.pop()
+#         # print(top.pos, top.size, top.type)
+#         if not top.lc:
+#             prev = str((top.prev.pos, top.prev.size, top.prev.type)) if top.prev else None
+#             nxt = str((top.next.pos, top.next.size, top.next.type)) if top.next else None
+#             print(prev, (top.pos, top.size, top.type), nxt)
+#             if previous != top.prev or (previous and previous.next != top):
+#                 print("previous not correct")
+#                 sys.exit()
+#             previous = top
+#         if top.lc:
+#             nodes.append(top.rc)
+#             nodes.append(top.lc)
 
 def solution(n, rs):
     global pos
     global root
-    root = Node(n, 0) # initial root of tree and start of the linked list
+    root = Node(n) # initial root of tree and start of the linked list
     cnt = 0
     for t, val in rs:
         if t == 'I':
@@ -630,12 +538,16 @@ def solution(n, rs):
     # Get answer here
     nodes = [root]
     ans = 0
+    pos = 0
     while len(nodes) > 0:
         top = nodes.pop()
         # print(top.pos, top.size, top.type)
         if top.type != -1:
             # print(top.pos, top.pos + top.size, top.type)
-            ans += top.pos * top.type
+            # print(pos, top.type)
+            ans += pos * top.type
+        if not top.lc:
+            pos += top.size
         if top.lc:
             nodes.append(top.rc)
             nodes.append(top.lc)
@@ -702,5 +614,5 @@ def generator():
 # print(naive_solution(100, [('I', 3), ('I', 8), ('O', 1), ('I', 2), ('I', 6), ('O', 0), ('I', 7), ('I', 7), ('O', 2), ('I', 7), ('I', 9), ('O', 3), ('I', 2), ('I', 3)]))
 # print(solution(100, [('I', 2), ('I', 4), ('O', 0), ('I', 5), ('I', 9), ('O', 3), ('I', 1), ('I', 1), ('O', 1), ('I', 9), ('I', 8), ('O', 2), ('I', 4), ('I', 9), ('O', 5), ('I', 7)]))
 # print(naive_solution(100, [('I', 2), ('I', 4), ('O', 0), ('I', 5), ('I', 9), ('O', 3), ('I', 1), ('I', 1), ('O', 1), ('I', 9), ('I', 8), ('O', 2), ('I', 4), ('I', 9), ('O', 5), ('I', 7)]))
-print(solution(100, [('I', 3), ('I', 1), ('O', 1), ('I', 3), ('I', 9), ('O', 0), ('I', 2), ('I', 4), ('O', 5), ('I', 8), ('I', 8), ('O', 4), ('I', 3), ('I', 6), ('O', 9), ('I', 7), ('I', 4), ('O', 6), ('I', 5), ('I', 6), ('O', 13), ('I', 9), ('I', 1), ('O', 11), ('I', 8), ('I', 6), ('O', 15), ('I', 6), ('I', 5), ('O', 8), ('I', 7), ('I', 7), ('O', 7), ('I', 5), ('I', 9), ('O', 2), ('I', 1), ('I', 2), ('O', 23), ('I', 10)]))
+# print(solution(100, [('I', 3), ('I', 1), ('O', 1), ('I', 3), ('I', 9), ('O', 0), ('I', 2), ('I', 4), ('O', 5), ('I', 8), ('I', 8), ('O', 4), ('I', 3), ('I', 6), ('O', 9), ('I', 7), ('I', 4), ('O', 6), ('I', 5), ('I', 6), ('O', 13), ('I', 9), ('I', 1), ('O', 11), ('I', 8), ('I', 6), ('O', 15), ('I', 6), ('I', 5), ('O', 8), ('I', 7), ('I', 7), ('O', 7), ('I', 5), ('I', 9), ('O', 2), ('I', 1), ('I', 2), ('O', 23), ('I', 10)]))
 # print(naive_solution(100, [('I', 3), ('I', 1), ('O', 1), ('I', 3), ('I', 9), ('O', 0), ('I', 2), ('I', 4), ('O', 5), ('I', 8), ('I', 8), ('O', 4), ('I', 3), ('I', 6), ('O', 9), ('I', 7), ('I', 4), ('O', 6), ('I', 5), ('I', 6), ('O', 13), ('I', 9), ('I', 1), ('O', 11), ('I', 8), ('I', 6), ('O', 15), ('I', 6), ('I', 5), ('O', 8), ('I', 7), ('I', 7), ('O', 7), ('I', 5), ('I', 9), ('O', 2), ('I', 1), ('I', 2), ('O', 23), ('I', 10)]))
