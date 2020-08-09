@@ -74,7 +74,7 @@ def solve(s, start, to_achieve):
         if len(primes[i]) == 1:
             cur = max((2 if '2' in s else 0) + (3 if '3' in s else 0) + (5 if '5' in s else 0) + (7 if '7' in s else 0), cur)
             break
-        if max(cur, to_achieve) * 1.1 > int(primes[i]) * (len(s) // (len(primes[i])-1)):
+        if 2*max(cur, to_achieve) * 1.1 > int(primes[i]) * (len(s) // (len(primes[i])-1)):
             break
         for j in range(len(s)):
             if primes[i] == s[j:j+len(primes[i])]:
