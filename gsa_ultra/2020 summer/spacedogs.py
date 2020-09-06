@@ -1,21 +1,27 @@
 from heapq import *
+# The remaining unmerged spacedogs
 remaining = {}
+# The priority queue that orders spacedogs by their weight
 h = []
 class SpaceDog: # Note: equality of spacedogs is implemented in terms of their location
     i = 0
     def __init__(self, mass, location):
         global remaining
         global h
+        # Initialize mass and location
         self.mass = mass
         self.location = location
+        # Assign a unique index to the spacedog
         self.ind = SpaceDog.i
         SpaceDog.i += 1
         # Push the dog into heap and remaining elements
         remaining[self.ind] = self
+        # Push the dog into the priority queue
         heappush(h, (self.mass, self.ind, self))
-        # print(self.ind)
+    # Used in answer
     def sum_location(self):
         return sum(self.location)
+    # Merge self with spacedog2, creating a new spacedog, adding it to queue and tree, and removing from `remaining`
     def eat(self, spacedog2):
         global h
         # print(self.location, spacedog2.location)
@@ -24,8 +30,10 @@ class SpaceDog: # Note: equality of spacedogs is implemented in terms of their l
         del remaining[self.ind]
         del remaining[spacedog2.ind]
         return new_dog
+    # Calculate distance between 2 spacedogs
     def distance(self, spacedog2):
         return sum([(self.location[i] - spacedog2.location[i])**2 for i in range(len(self.location))])
+    # This is a quick and dirty fix to me referring to spacedogs and the location that they represent interchangably :)
     def __getitem__(self, key):
         return self.location[key]
     def __len__(self):
@@ -33,26 +41,22 @@ class SpaceDog: # Note: equality of spacedogs is implemented in terms of their l
     def __eq__(self, other):
         return self.location == other.location
 
-
-    # TODO: implement equality as equality of locations
-
 # The class that implements the kdtree
 class Node:
     def __init__(self, values, axis=0):
         self.axis = axis
-        if len(values) == 1: # this is a leaf node
+        if len(values) == 1: # this is a leaf node, just store its value
             self.right = None
             self.left = None
             self.value = values[0]
         elif len(values) == 2 and values[0] == values[1]: # this is a leaf node, after merging the 2 values
-            # print("merging")
+            # Note that these are guaranteed to be merged eventually
             self.value = values[0].eat(values[1])
         else: # this is not a leaf node, split the tree into 2
             self.split(values)
 
     # Split the values into the left and right subtrees
     def split(self, values):
-        # print(values)
         k = len(values[0])
         n = len(values)
         mid = (n-1) // 2
@@ -61,7 +65,7 @@ class Node:
         while True: # This loop is for convenience to find the correct axis
             # Sort values according to the required axis
             values.sort(key=lambda x: x[self.axis])
-            # If the values are equal at that axis, try a different axis
+            # If the values are equal for that axis, try a different axis
             if values[0][self.axis] == values[-1][self.axis]:
                 self.axis = (self.axis + 1) % k
                 continue
@@ -78,7 +82,6 @@ class Node:
             left_values = values[:piv+1]
             right_values = values[piv+1:]
 
-            # print(len(left_values), len(right_values))
             # Calculate new bound to be inbetween the 2 elements
             # Make sure that it is strictly between any 2 points, current or future
             new_bound = (values[piv+1][self.axis] + values[piv][self.axis]) / 2
@@ -102,7 +105,6 @@ class Node:
             if box[i] < point[i] < box[i+k]: # coordinate is inside box
                 continue
             ans += min(abs(box[i]-point[i]), abs(box[i+k]-point[i]))**2
-        # print("distance calculator", point.location, box, ans)
         return ans
 
 
@@ -111,8 +113,6 @@ class Node:
         k = len(value)
         low = box[self.axis]
         high = box[self.axis + k]
-        # print("adding value", value.location, box, self.axis)
-        # print(self.value, self.left, self.right)
         if self.value:
             if self.value == value:
                 # print("merging not start")
@@ -131,8 +131,7 @@ class Node:
     
     # Remove value from tree
     # Mostly in place, but the new tree is returned, should be newly saved
-    def remove(self, value, box): 
-        # print("deleting box", self.box, "print", self.print(), "axis", self.axis)
+    def remove(self, value, box):
         k = len(value)
         low = box[self.axis]
         high = box[self.axis + k]
@@ -151,6 +150,8 @@ class Node:
             if not self.right: # If the immediate child was removed, no need for this node anymore
                 return self.left
         return self
+    
+    # find nearest neighbour for a particular point
     def find_nearest(self, point, best_d, best_point, box):
         k = len(point)
         low = box[self.axis]
@@ -191,14 +192,13 @@ class Node:
                 best_d = d
                 best_point = p
         return best_point, best_d
+    # For debugging, prints out the whole subtree
     def print(self):
         if self.value:
             return str(self.value.location) + ' ' + str(self.value.mass)
         return '(' + self.left.print() + ', ' + self.right.print() + ")"
 
 def solution(masses, locations):
-    # implement k-d tree
-    # or just do a quadratic algorithm, that should work as well
     global remaining
     global h
     h = []
@@ -207,51 +207,41 @@ def solution(masses, locations):
     dogs = [SpaceDog(masses[i], locations[i]) for i in range(len(masses))]
     k = len(locations[0])
     initial_box = [1e9 for i in range(k)] + [-1e9 for i in range(k)]
+    # Define the initial box
+    # This could honestly be done in a simpler way
     for i in locations:
         for j in range(k):
-            # print(len(initial_box), len(i))
             initial_box[j] = min(initial_box[j], i[j]-0.5)
             initial_box[j+k] = max(initial_box[j+k], i[j]+0.5)
+    # Initialize the kd-tree
     kd_tree = Node(dogs)
-    # print("build finished")
-    # print(kd_tree.print())
+    # Create the priority queue
     heapify(h)
+    # Merge spacedogs until only one is remaining
     while len(remaining) > 1:
 
         # Find smallest dog
-        # print("heap", h)
         top = heappop(h)[2]
         if top.ind not in remaining: # Check whether this dog has eaten before, becoming a different dog
             continue
 
         # Find its closest neighbour
         p, d = kd_tree.find_nearest(top, 1e100, None, initial_box)
-        # print("best distance", d)
-        # print("eating", p.location, top.location)
+        # Merge the dogs
         new_dog = p.eat(top)
-        # print("just eaten", p.location, top.location, new_dog.location)
-        # print(p.ind, top.ind, new_dog.ind)
-        # print(new_dog.ind)
 
-        # Update the kdtree
-        # print(kd_tree.print())
-        # print("deleting", top.ind)
+        # Do updates
         kd_tree = kd_tree.remove(top, initial_box)
-        # print(kd_tree.print())
-        # print("deleting", p.ind)
         kd_tree = kd_tree.remove(p, initial_box)
-        # if kd_tree:
-            # print(kd_tree.print())
-        # print("adding", new_dog.ind)
         if kd_tree:
             kd_tree.add(new_dog, initial_box)
         else:
             kd_tree = Node([new_dog])
-        # print(kd_tree.print())
     # Return the required result for the one remaining element in the heap
     # The answer will always be the largest element in the heap
     return h[-1][2].sum_location()
 
+# Used for debugging purposes
 def solution_naive(masses, locations):
     # implement k-d tree
     # or just do a quadratic algorithm, that should work as well
@@ -295,6 +285,8 @@ def solution_naive(masses, locations):
     # The answer will always be the largest element in the heap
     return h[-1][2].sum_location()
 
+
+# Tests and the test generator go below
 
 # print(solution([2, 5, 4], [(1, 4), (3, 1), (2, 6)]))
 

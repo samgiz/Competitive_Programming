@@ -1,46 +1,54 @@
 def solution(ps):
+    # Just a large value to use instead of infinity
     LARGE = int(1e9)
+    # The answers so far. Map current index -> speed -> least time taken to be at this index at this speed
     dp = {}
+    # Initialize with the first level
     for i in ps[0]:
         dp[i] = {5: 5}
+    # Go over the remaining levels
     for i in range(1, len(ps)):
+        # Sort the platform heights, so we can use a sliding window
         p = sorted(j for j in ps[i])
         new_dp = {}
         dp_vals = sorted(dp.keys())
+        # Where to start the sliding window
         start = 0
+        # Iterate over new pillar sizes
         for j in p:
+            # Increase sliding windows size if necessary
             while start != len(dp_vals) and dp_vals[start] < j - 5:
                 start += 1
             if start == len(dp_vals):
                 break
             new_dp_j = {}
             cur = start
+            # Iterate over sliding window of pillars from which we can jump to j
             while cur < len(dp_vals) and dp_vals[cur] <= j + 5:
+                # do some local caching
                 el = dp_vals[cur]
                 d = dp[el]
+                # Calculate the new dp values
                 for speed in d:
                     cost = d[speed]
-                    if abs(el - j) <= 5:
-                        if el < j:
-                            m = min(10, speed + 1)
-                            new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
-                        elif el > j:
-                            m = max(1, speed - 1)
-                            new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
-                        else:
-                            new_dp_j[speed] = min(new_dp_j.get(speed, LARGE), cost + speed)
+                    if el < j:
+                        m = min(10, speed + 1)
+                        new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
+                    elif el > j:
+                        m = max(1, speed - 1)
+                        new_dp_j[m] = min(new_dp_j.get(m, LARGE), cost + m)
+                    else:
+                        new_dp_j[speed] = min(new_dp_j.get(speed, LARGE), cost + speed)
                 cur += 1
-            # idea: prune out sctrictly worse speed values at the same location here
+            # prune out sctrictly worse speed values at the same location
             m = LARGE
             for k, v in sorted(new_dp_j.items()):
-                # print(i, j, k, v)
                 if v >= m:
-                    # print('deleting')
                     del new_dp_j[k]
                 m = min(m, v)
             new_dp[j] = new_dp_j
         dp = new_dp
-    # print(dp)
+    # get the answer
     ans = min([dp[i][j] for i in dp for j in dp[i]])
     return ans
 # print(solution([(1, 4), (3, 8)]))
