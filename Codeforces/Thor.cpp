@@ -139,11 +139,36 @@ const int N = 1e6+10;
 
 int main(){
     fastIO;
-    cout<<1<<endl;
-    for(int i=0; i<100000-1; i++){
-        if(rand()%2)cout<<"AB";
-        else cout<<"BB";
+    ll n, q, unread = 0, cur = 0;
+    cin>>n>>q;
+    vector<int> ReadUpTo(n+1), Unread(n+1);
+    queue<pair<ll, ll>>Messeges; //number, app;
+    for(ll i=1; i<=q; i++){
+        int t, x;
+        cin>>t>>x;
+        if(t == 1){
+            Unread[x]++;
+            Messeges.push({i, x});
+            unread++;
+        }
+        else if(t == 2){
+            ReadUpTo[x] = i;
+            unread -= Unread[x];
+            Unread[x] = 0;
+        }
+        else if(t == 3){
+            while(cur < x){
+                cur++;
+                auto top = Messeges.front();
+                debug(top.fi, top.se);
+                Messeges.pop();
+                if(ReadUpTo[top.se] < top.fi){
+                    unread--;
+                    Unread[top.se]--;
+                    ReadUpTo[top.se] = top.fi;
+                }
+            }
+        }
+        cout << unread << endl;
     }
-    cout<<"A";
-
 }
