@@ -1,0 +1,1 @@
+This folder is for me to experiment implementing interesting data structures in C++ (at least for now).
